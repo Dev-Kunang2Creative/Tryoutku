@@ -30,6 +30,19 @@ jobs:
       - name: Pasang dependensi PHP
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      - name: Siapkan Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # Setiap layout memakai @vite, jadi tanpa manifest hasil build setiap
+      # halaman yang dirender melempar ViteManifestNotFoundException.
+      - name: Bangun aset frontend
+        run: |
+          npm ci
+          npm run build
+
       - name: Siapkan berkas lingkungan
         run: |
           cp .env.example .env
