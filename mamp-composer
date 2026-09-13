@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Helper script untuk menjalankan Composer menggunakan PHP 8.3 bawaan MAMP
+PHP_BIN="/Applications/MAMP/bin/php/php8.3.30/bin/php"
+COMPOSER_BIN="/Applications/MAMP/bin/php/composer"
+
+"$PHP_BIN" "$COMPOSER_BIN" "$@"

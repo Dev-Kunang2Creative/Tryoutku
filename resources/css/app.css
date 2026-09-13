@@ -1,0 +1,180 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    /* Institutional blue — used only for primary actions, links and focus. */
+    --color-brand-50: #f1f5fd;
+    --color-brand-100: #dfe8fb;
+    --color-brand-200: #c6d7f8;
+    --color-brand-300: #9dbaf2;
+    --color-brand-400: #6d94ea;
+    --color-brand-500: #4a72e0;
+    --color-brand-600: #2456c8;
+    --color-brand-700: #1d46a3;
+    --color-brand-800: #1b3c85;
+    --color-brand-900: #1a356b;
+}
+
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-slate-50 text-slate-900 antialiased;
+    }
+
+    /* Digits that never shift width — matters for the exam countdown. */
+    .tabular {
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+@layer components {
+    /* ---------- Buttons ---------- */
+    .btn {
+        @apply inline-flex shrink-0 select-none items-center justify-center gap-2 whitespace-nowrap
+               rounded-lg px-4 py-2.5 text-sm font-medium leading-5 transition-colors
+               focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600
+               disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .btn-primary {
+        @apply bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800;
+    }
+
+    .btn-secondary {
+        @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900;
+    }
+
+    .btn-ghost {
+        @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+    }
+
+    .btn-danger {
+        @apply border border-red-200 bg-white text-red-600 hover:border-red-300 hover:bg-red-50;
+    }
+
+    .btn-success {
+        @apply bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800;
+    }
+
+    .btn-sm {
+        @apply gap-1.5 rounded-md px-2.5 py-1.5 text-xs;
+    }
+
+    .btn-lg {
+        @apply px-5 py-3 text-[0.9375rem];
+    }
+
+    /* ---------- Surfaces ---------- */
+    .card {
+        @apply rounded-xl border border-slate-200 bg-white;
+    }
+
+    .card-pad {
+        @apply p-4 sm:p-6;
+    }
+
+    /* ---------- Forms ---------- */
+    .form-label {
+        @apply mb-1.5 block text-sm font-medium text-slate-700;
+    }
+
+    .form-hint {
+        @apply mt-1.5 text-xs leading-relaxed text-slate-500;
+    }
+
+    .form-input {
+        @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900
+               transition-colors placeholder:text-slate-400
+               focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/25;
+    }
+
+    .form-select {
+        @apply block w-full cursor-pointer appearance-none rounded-lg border border-slate-300 bg-white
+               py-2.5 pl-3 pr-10 text-sm text-slate-900 transition-colors
+               bg-[length:1.125rem] bg-[right_0.625rem_center] bg-no-repeat
+               focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/25;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    }
+
+    .form-checkbox {
+        @apply size-4 shrink-0 cursor-pointer rounded border-slate-300 text-brand-600
+               focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0;
+    }
+
+    .form-radio {
+        @apply size-4 shrink-0 cursor-pointer border-slate-300 text-brand-600
+               focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0;
+    }
+
+    /* ---------- Data tables ---------- */
+    .data-table {
+        @apply w-full border-collapse text-sm;
+    }
+
+    .data-table thead th {
+        @apply whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3 text-left
+               text-xs font-semibold uppercase tracking-wide text-slate-500;
+    }
+
+    .data-table tbody td {
+        @apply border-b border-slate-100 px-4 py-3.5 align-middle text-slate-700;
+    }
+
+    .data-table tbody tr:last-child td {
+        @apply border-b-0;
+    }
+
+    .data-table tbody tr:hover td {
+        @apply bg-slate-50/60;
+    }
+
+    /* ---------- Badges ---------- */
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium leading-none;
+    }
+
+    .badge-neutral {
+        @apply bg-slate-100 text-slate-600;
+    }
+
+    .badge-brand {
+        @apply bg-brand-50 text-brand-700;
+    }
+
+    .badge-success {
+        @apply bg-emerald-50 text-emerald-700;
+    }
+
+    .badge-warning {
+        @apply bg-amber-50 text-amber-700;
+    }
+
+    .badge-danger {
+        @apply bg-red-50 text-red-700;
+    }
+
+    /* ---------- Links ---------- */
+    .link {
+        @apply font-medium text-brand-700 underline-offset-4 hover:text-brand-800 hover:underline;
+    }
+}
+
+/* Laravel's default paginator ships with its own spacing; keep it aligned left. */
+@layer utilities {
+    .pagination-wrap nav {
+        @apply text-sm;
+    }
+}
+
+/* Safari still paints a disclosure triangle that `list-none` alone does not hide. */
+summary::-webkit-details-marker {
+    display: none;
+}

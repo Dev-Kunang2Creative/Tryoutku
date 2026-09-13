@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Helper script untuk menjalankan Laravel artisan menggunakan PHP 8.3 bawaan MAMP
+PHP_BIN="/Applications/MAMP/bin/php/php8.3.30/bin/php"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+"$PHP_BIN" "$SCRIPT_DIR/artisan" "$@"
