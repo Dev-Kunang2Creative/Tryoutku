@@ -1,0 +1,97 @@
+name: Deploy ke ujian.kikz.tech
+
+# Setiap dorongan ke main dibangun di sini, bukan di server. Hosting bersama
+# Hostinger tidak menyediakan Node, dan Composer di sana sering kehabisan
+# memori, jadi vendor/ dan public/build/ ikut dikirim sebagai hasil jadi.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-produksi
+  cancel-in-progress: false
+
+jobs:
+  uji:
+    name: Jalankan tes
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, zip, gd, xml, pdo_mysql, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Pasang dependensi PHP
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Siapkan berkas lingkungan
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Jalankan tes
+        run: php artisan test
+
+  kirim:
+    name: Kirim ke server
+    needs: uji
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Siapkan PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, zip, gd, xml, pdo_mysql
+          coverage: none
+
+      - name: Pasang dependensi PHP tanpa paket pengembangan
+        run: composer install --prefer-dist --no-interaction --no-progress --no-dev --optimize-autoloader
+
+      - name: Siapkan Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Bangun aset frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Siapkan kunci SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Salin berkas ke server
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${{ secrets.SSH_PORT }} -i ~/.ssh/id_ed25519" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.claude' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='storage/app/public' \
+            --exclude='storage/framework' \
+            --exclude='storage/logs' \
+            --exclude='mamp-artisan' \
+            --exclude='mamp-composer' \
+            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
+      - name: Rapikan aplikasi di server
+        run: |
+          ssh -p "${{ secrets.SSH_PORT }}" -i ~/.ssh/id_ed25519 \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "cd ${{ secrets.DEPLOY_PATH }} && bash deploy/setelah-kirim.sh"
