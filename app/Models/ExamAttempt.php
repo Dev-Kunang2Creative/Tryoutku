@@ -74,6 +74,16 @@ class ExamAttempt extends Model
     }
 
     /**
+     * Sesi yang belum disentuh sama sekali. Menekan tombol mulai lalu tidak
+     * menjawab apa pun tidak boleh menghanguskan jatah latihan hari itu, jadi
+     * sesi semacam ini diperlakukan seolah tidak pernah ada.
+     */
+    public function isUntouched(): bool
+    {
+        return $this->answers()->whereNotNull('question_option_id')->doesntExist();
+    }
+
+    /**
      * Score only the questions served in this session, then roll each one
      * forward or back in the mastery schedule.
      */

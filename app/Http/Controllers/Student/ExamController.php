@@ -33,13 +33,21 @@ class ExamController extends Controller
         $existing = $tryout->sessionOn($user);
 
         if ($existing) {
-            if ($existing->isExpired()) {
+            // Sesi yang kedaluwarsa tanpa satu jawaban pun dibuang, bukan
+            // dinilai nol: tombol yang tak sengaja tertekan tidak boleh
+            // menghabiskan jatah latihan hari itu.
+            if ($existing->isExpired() && $existing->isUntouched()) {
+                $existing->delete();
+                $existing = null;
+            } elseif ($existing->isExpired()) {
                 $existing->calculateFinalScore();
 
                 return redirect()->route('student.exam.result', $existing)
                     ->with('warning', 'Waktu sesi sebelumnya sudah habis, jawaban otomatis dikumpulkan.');
             }
+        }
 
+        if ($existing) {
             if ($existing->status === 'in_progress') {
                 return redirect()->route('student.exam.room', $existing);
             }
@@ -75,6 +83,27 @@ class ExamController extends Controller
         }
 
         return redirect()->route('student.exam.room', $attempt);
+    }
+
+    /**
+     * Tinggalkan sesi yang belum disentuh sehingga jatah hari ini utuh.
+     *
+     * Sesi yang sudah punya jawaban tidak pernah dibuang lewat jalan ini;
+     * yang begitu hanya ditinggalkan dan bisa dilanjutkan lagi.
+     */
+    public function abandon(ExamAttempt $attempt)
+    {
+        $this->authorizeOwner($attempt);
+
+        if ($attempt->status === 'in_progress' && $attempt->isUntouched()) {
+            $attempt->delete();
+
+            return redirect()->route('student.dashboard')
+                ->with('info', 'Sesi dibatalkan. Belum ada jawaban yang tercatat, jadi latihan hari ini masih bisa dimulai lagi.');
+        }
+
+        return redirect()->route('student.dashboard')
+            ->with('info', 'Sesi disimpan dan bisa dilanjutkan.');
     }
 
     public function room(ExamAttempt $attempt)

@@ -15,6 +15,14 @@ class StudentDashboardController extends Controller
         $user = Auth::user();
         $today = Carbon::today();
 
+        // Sesi yang dimulai tetapi belum dijawab sama sekali tidak dianggap
+        // pernah ada, sehingga tombol mulai yang tak sengaja tertekan tidak
+        // menghanguskan jatah latihan hari itu.
+        ExamAttempt::where('user_id', $user->id)
+            ->where('status', 'in_progress')
+            ->whereDoesntHave('answers', fn ($query) => $query->whereNotNull('question_option_id'))
+            ->each(fn (ExamAttempt $sesi) => $sesi->delete());
+
         $tryouts = Tryout::where('is_active', true)
             ->withCount('questions')
             ->orderBy('id')

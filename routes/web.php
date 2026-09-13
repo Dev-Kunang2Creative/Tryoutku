@@ -32,6 +32,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/latihan/sesi/{attempt}', [ExamController::class, 'room'])->name('student.exam.room');
     Route::post('/latihan/sesi/{attempt}/jawab', [ExamController::class, 'saveAnswer'])->name('student.exam.answer');
     Route::post('/latihan/sesi/{attempt}/selesai', [ExamController::class, 'finish'])->name('student.exam.finish');
+    Route::post('/latihan/sesi/{attempt}/batal', [ExamController::class, 'abandon'])->name('student.exam.abandon');
     Route::get('/latihan/sesi/{attempt}/hasil', [ExamController::class, 'result'])->name('student.exam.result');
     Route::get('/latihan/sesi/{attempt}/pembahasan', [ExamController::class, 'review'])->name('student.exam.review');
 });

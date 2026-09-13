@@ -134,13 +134,41 @@
                         @elseif($status === 'empty')
                             <button type="button" class="btn btn-secondary w-full" disabled>Belum ada soal</button>
                         @else
-                            <form action="{{ route('student.exam.start', $tryout) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-primary w-full">
-                                    Mulai latihan &middot; {{ $package['due_count'] }} soal
-                                    <x-icon name="arrow-right" class="size-4" />
-                                </button>
-                            </form>
+                            <button type="button" class="btn btn-primary w-full"
+                                onclick="document.getElementById('mulai-{{ $tryout->id }}').showModal()">
+                                Mulai latihan &middot; {{ $package['due_count'] }} soal
+                                <x-icon name="arrow-right" class="size-4" />
+                            </button>
+
+                            {{-- Penegasan sebelum penghitung waktu berjalan, supaya tombol
+                                 yang tak sengaja tertekan tidak langsung membuka sesi. --}}
+                            <dialog id="mulai-{{ $tryout->id }}"
+                                class="w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-slate-200 p-0 backdrop:bg-slate-900/40">
+                                <form action="{{ route('student.exam.start', $tryout) }}" method="POST" class="p-5">
+                                    @csrf
+
+                                    <h2 class="text-base font-semibold text-slate-900">Mulai {{ $tryout->title }}?</h2>
+
+                                    <p class="mt-2 text-sm leading-relaxed text-slate-600">
+                                        Kamu akan mengerjakan <span class="font-medium text-slate-900 tabular">{{ $package['due_count'] }}</span> soal
+                                        dengan waktu <span class="font-medium text-slate-900 tabular">{{ $tryout->duration_minutes }}</span> menit.
+                                        Penghitung waktu mulai berjalan begitu tombol Mulai ditekan.
+                                    </p>
+
+                                    <p class="mt-2 text-sm leading-relaxed text-slate-500">
+                                        Kalau berubah pikiran sebelum menjawab soal pertama, sesinya bisa dibatalkan
+                                        dan latihan hari ini tetap utuh.
+                                    </p>
+
+                                    <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                                        <button type="button" class="btn btn-secondary justify-center"
+                                            onclick="this.closest('dialog').close()">Batal</button>
+                                        <button type="submit" class="btn btn-primary justify-center">
+                                            Mulai sekarang
+                                        </button>
+                                    </div>
+                                </form>
+                            </dialog>
                         @endif
                     </div>
                 </article>

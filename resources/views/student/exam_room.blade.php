@@ -39,6 +39,15 @@
                 <span id="countdown" class="text-sm font-semibold tabular sm:text-base">--:--</span>
             </div>
 
+            <form action="{{ route('student.exam.abandon', $attempt) }}" method="POST" class="shrink-0">
+                @csrf
+                <button type="submit" class="btn btn-secondary btn-sm px-2 sm:px-3"
+                    title="Keluar tanpa mengumpulkan">
+                    <x-icon name="arrow-left" class="size-4" />
+                    <span class="sr-only sm:not-sr-only">Keluar</span>
+                </button>
+            </form>
+
             <button type="button" data-action="finish" class="btn btn-success btn-sm shrink-0 sm:px-4 sm:py-2.5 sm:text-sm">
                 <x-icon name="check-double" class="size-4" />
                 Selesai
