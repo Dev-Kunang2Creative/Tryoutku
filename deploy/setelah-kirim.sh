@@ -21,6 +21,17 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
+# Folder kerja ini sengaja tidak ikut dikirim agar berkas unggahan dan catatan
+# log di server tidak pernah tersentuh, jadi keberadaannya dipastikan di sini.
+mkdir -p storage/app/public \
+         storage/framework/cache/data \
+         storage/framework/sessions \
+         storage/framework/views \
+         storage/logs \
+         bootstrap/cache
+
+chmod -R ug+rwx storage bootstrap/cache
+
 # Berhentikan permintaan masuk selama basis data berubah, lalu pastikan
 # aplikasi selalu keluar dari mode perawatan walau ada langkah yang gagal.
 "$PHP" artisan down --render="errors::503" --retry=15 || true
