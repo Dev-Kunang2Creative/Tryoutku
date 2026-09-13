@@ -107,12 +107,69 @@ class QuestionImportTest extends TestCase
         $this->assertSame($before, $this->tryout->questions()->count());
         $this->assertDatabaseMissing('questions', ['question_text' => 'Soal yang benar']);
 
+        // Keluhan dikelompokkan per jenis masalah, bukan satu baris per soal.
         $errors = session('import_errors');
-        $this->assertCount(2, $errors);
-        $this->assertStringContainsString('Baris 3', $errors[0]);
-        $this->assertStringContainsString('bukan salah satu dari A-E', $errors[0]);
-        $this->assertStringContainsString('Baris 4', $errors[1]);
-        $this->assertStringContainsString('Pertanyaan', $errors[1]);
+        $gabungan = implode(' | ', $errors);
+
+        $this->assertStringContainsString('bukan salah satu dari A-E', $gabungan);
+        $this->assertStringContainsString('baris 3', $gabungan);
+        $this->assertStringContainsString('kolom "Pertanyaan" kosong', $gabungan);
+        $this->assertStringContainsString('baris 4', $gabungan);
+    }
+
+    public function test_a_question_with_only_four_options_is_accepted(): void
+    {
+        // Soal olimpiade lazimnya hanya menyediakan pilihan A sampai D.
+        $file = $this->spreadsheet([
+            ['Satuan SI untuk gaya adalah', 'Joule', 'Newton', 'Watt', 'Pascal', '', 'B', '', '', ''],
+        ]);
+
+        $this->actingAs($this->manager)
+            ->post(route('admin.tryouts.questions.import.store', $this->tryout), ['file' => $file])
+            ->assertRedirect(route('admin.tryouts.questions.index', $this->tryout))
+            ->assertSessionHas('success', '1 soal berhasil ditambahkan ke bank soal.');
+
+        $soal = Question::where('question_text', 'Satuan SI untuk gaya adalah')->firstOrFail();
+
+        $this->assertCount(4, $soal->options);
+        $this->assertSame(['A', 'B', 'C', 'D'], $soal->options->pluck('option_key')->all());
+        $this->assertSame('Newton', $soal->correctOption()->option_text);
+    }
+
+    public function test_a_key_pointing_at_an_empty_option_is_refused(): void
+    {
+        $file = $this->spreadsheet([
+            ['Soal empat pilihan dengan kunci E', 'A', 'B', 'C', 'D', '', 'E', '', '', ''],
+        ]);
+
+        $this->actingAs($this->manager)
+            ->post(route('admin.tryouts.questions.import.store', $this->tryout), ['file' => $file])
+            ->assertSessionHasErrors('file');
+
+        $this->assertStringContainsString('teksnya kosong', implode(' ', session('import_errors')));
+        $this->assertDatabaseMissing('questions', ['question_text' => 'Soal empat pilihan dengan kunci E']);
+    }
+
+    public function test_repeated_problems_are_grouped_into_one_line_per_kind(): void
+    {
+        $baris = [];
+
+        for ($i = 0; $i < 12; $i++) {
+            // Semuanya kehilangan kunci jawaban: satu jenis masalah, dua belas baris.
+            $baris[] = ['Soal nomor '.$i, 'A', 'B', 'C', 'D', '', '', '', '', ''];
+        }
+
+        $this->actingAs($this->manager)
+            ->post(route('admin.tryouts.questions.import.store', $this->tryout), [
+                'file' => $this->spreadsheet($baris),
+            ])
+            ->assertSessionHasErrors('file');
+
+        $errors = session('import_errors');
+
+        $this->assertCount(1, $errors, 'Dua belas baris bermasalah sama harus diringkas jadi satu keluhan.');
+        $this->assertStringContainsString('12 baris', $errors[0]);
+        $this->assertStringContainsString('baris 2-13', $errors[0]);
     }
 
     public function test_blank_rows_are_skipped_and_an_empty_file_is_rejected(): void
@@ -178,7 +235,7 @@ class QuestionImportTest extends TestCase
 
         $errors = session('import_errors');
         $this->assertCount(1, $errors);
-        $this->assertStringContainsString('Baris 7', $errors[0]);
+        $this->assertStringContainsString('baris 7', $errors[0]);
         $this->assertStringContainsString('tidak berisi soal', $errors[0]);
     }
 

@@ -58,7 +58,21 @@ class QuestionImportController extends Controller
      * @var list<string>
      */
     private const REQUIRED_COLUMNS = [
-        'question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'option_e', 'correct_option',
+        'question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_option',
+    ];
+
+    /**
+     * Kolom opsi menurut hurufnya. Opsi E boleh kosong: banyak soal olimpiade
+     * hanya menyediakan empat pilihan.
+     *
+     * @var array<string, string>
+     */
+    private const OPTION_COLUMNS = [
+        'A' => 'option_a',
+        'B' => 'option_b',
+        'C' => 'option_c',
+        'D' => 'option_d',
+        'E' => 'option_e',
     ];
 
     private const OPTION_KEYS = ['A', 'B', 'C', 'D', 'E'];
@@ -337,9 +351,18 @@ class QuestionImportController extends Controller
             }
 
             $correct = strtoupper($values['correct_option']);
+            $opsi = [];
+
+            foreach (self::OPTION_COLUMNS as $huruf => $kolom) {
+                if ($values[$kolom] !== '') {
+                    $opsi[$huruf] = $values[$kolom];
+                }
+            }
 
             if ($values['correct_option'] !== '' && ! in_array($correct, self::OPTION_KEYS, true)) {
                 $problems[] = 'kunci jawaban "'.$values['correct_option'].'" bukan salah satu dari A-E';
+            } elseif ($correct !== '' && ! isset($opsi[$correct])) {
+                $problems[] = 'kunci jawaban menunjuk ke pilihan '.$correct.' yang teksnya kosong';
             }
 
             $weight = $values['score_weight'];
@@ -355,7 +378,9 @@ class QuestionImportController extends Controller
             }
 
             if ($problems !== []) {
-                $errors[$entry['row']] = 'Baris '.$entry['row'].': '.implode('; ', $problems).'.';
+                foreach ($problems as $keluhan) {
+                    $errors[$keluhan][] = $entry['row'];
+                }
 
                 continue;
             }
@@ -365,13 +390,7 @@ class QuestionImportController extends Controller
                 'explanation' => $values['explanation'] !== '' ? $values['explanation'] : null,
                 'score_weight' => $weight !== '' ? (float) $weight : 10.00,
                 'order' => $order !== '' ? (int) $order : null,
-                'options' => [
-                    'A' => $values['option_a'],
-                    'B' => $values['option_b'],
-                    'C' => $values['option_c'],
-                    'D' => $values['option_d'],
-                    'E' => $values['option_e'],
-                ],
+                'options' => $opsi,
                 'correct_option' => $correct,
                 'image' => $image,
             ];
@@ -380,14 +399,10 @@ class QuestionImportController extends Controller
         // Gambar yang menambat di baris tanpa soal hampir selalu berarti gambar
         // itu tergeser; menolaknya lebih baik daripada membuangnya diam-diam.
         foreach (array_diff(array_keys($images), $claimedImageRows) as $strayRow) {
-            $errors[$strayRow] = 'Baris '.$strayRow.': ada gambar menempel di baris yang tidak berisi soal. '
-                .'Geser gambarnya ke baris soal yang benar.';
+            $errors['ada gambar menempel di baris yang tidak berisi soal, geser ke baris soal yang benar'][] = $strayRow;
         }
 
-        // Dikunci per nomor baris supaya keluhan tampil urut seperti di Excel.
-        ksort($errors);
-
-        return [$questions, array_values($errors)];
+        return [$questions, $this->ringkasKeluhan($errors)];
     }
 
     /**
@@ -580,5 +595,64 @@ class QuestionImportController extends Controller
     private function normalise(string $value): string
     {
         return preg_replace('/[^a-z0-9]/', '', strtolower($value)) ?? '';
+    }
+
+    /**
+     * Ubah keluhan per baris menjadi ringkasan per jenis masalah.
+     *
+     * Berkas dengan ratusan soal bisa menghasilkan ratusan keluhan yang isinya
+     * itu-itu saja. Dikelompokkan begini, pengguna melihat ada berapa jenis
+     * masalah dan di baris mana saja, bukan gulungan panjang yang seragam.
+     *
+     * @param  array<string, list<int>>  $keluhan
+     * @return list<string>
+     */
+    private function ringkasKeluhan(array $keluhan): array
+    {
+        // Jenis masalah yang paling banyak ditemui tampil lebih dulu.
+        uasort($keluhan, fn (array $a, array $b) => count($b) <=> count($a));
+
+        $ringkasan = [];
+
+        foreach ($keluhan as $masalah => $baris) {
+            sort($baris);
+
+            $ringkasan[] = count($baris).' baris '.$masalah.' — baris '.$this->rentangBaris($baris).'.';
+        }
+
+        return $ringkasan;
+    }
+
+    /**
+     * Rangkai nomor baris menjadi rentang yang ringkas, misalnya "2-91, 102-126".
+     *
+     * @param  list<int>  $baris
+     */
+    private function rentangBaris(array $baris): string
+    {
+        $rentang = [];
+        $awal = $akhir = array_shift($baris);
+
+        foreach ($baris as $nomor) {
+            if ($nomor === $akhir + 1) {
+                $akhir = $nomor;
+
+                continue;
+            }
+
+            $rentang[] = $awal === $akhir ? (string) $awal : $awal.'-'.$akhir;
+            $awal = $akhir = $nomor;
+        }
+
+        $rentang[] = $awal === $akhir ? (string) $awal : $awal.'-'.$akhir;
+
+        // Daftar rentang yang terlalu panjang justru menutupi pesannya sendiri.
+        if (count($rentang) > 8) {
+            $sisa = count($rentang) - 8;
+            $rentang = array_slice($rentang, 0, 8);
+            $rentang[] = 'dan '.$sisa.' kelompok lainnya';
+        }
+
+        return implode(', ', $rentang);
     }
 }

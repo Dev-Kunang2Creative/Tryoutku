@@ -56,11 +56,29 @@ class QuestionController extends Controller
             'explanation' => ['nullable', 'string'],
             'score_weight' => ['required', 'numeric', 'min:0.1'],
             'order' => ['nullable', 'integer'],
-            'options' => ['required', 'array', 'size:5'],
-            'options.*' => ['required', 'string'],
+            'options' => ['required', 'array'],
+            'options.A' => ['required', 'string'],
+            'options.B' => ['required', 'string'],
+            'options.C' => ['required', 'string'],
+            'options.D' => ['required', 'string'],
+            'options.E' => ['nullable', 'string'],
             'correct_option' => ['required', 'in:A,B,C,D,E'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,gif,webp', 'max:2048'],
+        ], [], [
+            'options.A' => 'pilihan A',
+            'options.B' => 'pilihan B',
+            'options.C' => 'pilihan C',
+            'options.D' => 'pilihan D',
+            'options.E' => 'pilihan E',
         ]);
+
+        $validated['options'] = $this->opsiTerisi($validated['options']);
+
+        if (! array_key_exists($validated['correct_option'], $validated['options'])) {
+            return back()->withInput()->withErrors([
+                'correct_option' => 'Kunci jawaban menunjuk ke opsi yang teksnya kosong.',
+            ]);
+        }
 
         DB::transaction(function () use ($request, $tryout, $validated) {
             $question = $tryout->questions()->create([
@@ -101,11 +119,29 @@ class QuestionController extends Controller
             'explanation' => ['nullable', 'string'],
             'score_weight' => ['required', 'numeric', 'min:0.1'],
             'order' => ['nullable', 'integer'],
-            'options' => ['required', 'array', 'size:5'],
-            'options.*' => ['required', 'string'],
+            'options' => ['required', 'array'],
+            'options.A' => ['required', 'string'],
+            'options.B' => ['required', 'string'],
+            'options.C' => ['required', 'string'],
+            'options.D' => ['required', 'string'],
+            'options.E' => ['nullable', 'string'],
             'correct_option' => ['required', 'in:A,B,C,D,E'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,gif,webp', 'max:2048'],
+        ], [], [
+            'options.A' => 'pilihan A',
+            'options.B' => 'pilihan B',
+            'options.C' => 'pilihan C',
+            'options.D' => 'pilihan D',
+            'options.E' => 'pilihan E',
         ]);
+
+        $validated['options'] = $this->opsiTerisi($validated['options']);
+
+        if (! array_key_exists($validated['correct_option'], $validated['options'])) {
+            return back()->withInput()->withErrors([
+                'correct_option' => 'Kunci jawaban menunjuk ke opsi yang teksnya kosong.',
+            ]);
+        }
 
         DB::transaction(function () use ($request, $question, $validated) {
             $question->update([
@@ -133,6 +169,12 @@ class QuestionController extends Controller
                     ]
                 );
             }
+
+            // Opsi yang dikosongkan pada penyuntingan tidak boleh tertinggal,
+            // atau soal empat pilihan akan tetap menampilkan opsi kelimanya.
+            $question->options()
+                ->whereNotIn('option_key', array_keys($validated['options']))
+                ->delete();
         });
 
         return redirect()->route('admin.tryouts.questions.index', $tryout)
@@ -145,5 +187,20 @@ class QuestionController extends Controller
 
         return redirect()->route('admin.tryouts.questions.index', $tryout)
             ->with('success', 'Butir soal berhasil dihapus.');
+    }
+
+    /**
+     * Buang opsi yang teksnya kosong, sehingga soal boleh punya empat pilihan
+     * saja. Banyak soal olimpiade memang hanya menyediakan A sampai D.
+     *
+     * @param  array<string, string|null>  $opsi
+     * @return array<string, string>
+     */
+    private function opsiTerisi(array $opsi): array
+    {
+        return array_filter(
+            array_map(fn (?string $teks) => $teks === null ? '' : trim($teks), $opsi),
+            fn (string $teks) => $teks !== ''
+        );
     }
 }

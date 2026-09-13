@@ -67,7 +67,8 @@
         <legend class="form-label">Opsi jawaban &amp; kunci <span class="text-red-500">*</span></legend>
 
         <p class="mb-3 -mt-0.5 text-xs leading-relaxed text-slate-500">
-            Isi kelima opsi, lalu pilih tombol radio pada opsi yang menjadi kunci jawaban.
+            Isi opsi A sampai D, lalu pilih tombol radio pada opsi yang menjadi kunci jawaban.
+            Opsi E boleh dikosongkan bila soalnya hanya punya empat pilihan.
         </p>
 
         <div class="space-y-2">
@@ -85,14 +86,19 @@
                         <span class="sr-only">Jadikan opsi {{ $key }} kunci jawaban</span>
                     </label>
 
-                    <input type="text" name="options[{{ $key }}]" value="{{ $optionValue }}" required
-                        class="form-input border-slate-200" placeholder="Teks opsi {{ $key }}">
+                    <input type="text" name="options[{{ $key }}]" value="{{ $optionValue }}"
+                        @required($key !== 'E')
+                        class="form-input border-slate-200"
+                        placeholder="{{ $key === 'E' ? 'Teks opsi E (boleh kosong)' : 'Teks opsi '.$key }}">
                 </div>
             @endforeach
         </div>
 
         <x-input-error for="correct_option" />
         <x-input-error for="options" />
+        @foreach(['A', 'B', 'C', 'D', 'E'] as $k)
+            <x-input-error :for="'options.'.$k" />
+        @endforeach
     </fieldset>
 
     <div>
