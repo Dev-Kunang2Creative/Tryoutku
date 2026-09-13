@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\ExamResultController;
+use App\Http\Controllers\Admin\LearnerStatisticsController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuestionImportController;
 use App\Http\Controllers\Admin\TryoutController;
@@ -50,6 +51,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('tryouts/{tryout}/questions/{question}/edit', [QuestionController::class, 'edit'])->name('tryouts.questions.edit');
     Route::put('tryouts/{tryout}/questions/{question}', [QuestionController::class, 'update'])->name('tryouts.questions.update');
     Route::delete('tryouts/{tryout}/questions/{question}', [QuestionController::class, 'destroy'])->name('tryouts.questions.destroy');
+
+    Route::get('/statistik', [LearnerStatisticsController::class, 'index'])->name('statistics.index');
 
     Route::get('/results', [ExamResultController::class, 'index'])->name('results.index');
     Route::get('/results/{attempt}', [ExamResultController::class, 'show'])->name('results.show');

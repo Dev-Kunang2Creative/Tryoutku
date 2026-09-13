@@ -42,7 +42,8 @@
                 $navItems = [
                     ['route' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'layout-dashboard', 'label' => 'Dashboard'],
                     ['route' => 'admin.tryouts.index', 'active' => 'admin.tryouts.*', 'icon' => 'clipboard-list', 'label' => 'Paket Soal'],
-                    ['route' => 'admin.results.index', 'active' => 'admin.results.*', 'icon' => 'chart', 'label' => 'Riwayat Sesi'],
+                    ['route' => 'admin.statistics.index', 'active' => 'admin.statistics.*', 'icon' => 'chart', 'label' => 'Statistik'],
+                    ['route' => 'admin.results.index', 'active' => 'admin.results.*', 'icon' => 'clock', 'label' => 'Riwayat Sesi'],
                 ];
             @endphp
 
